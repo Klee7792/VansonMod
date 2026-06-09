@@ -1,0 +1,60 @@
+name: 稳定版构建(tipa+deb)
+on:
+  workflow_dispatch:
+    分支: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          brew install ldid make dpkg
+
+      - name: Clone Theos (latest)
+        run: |
+          sudo rm -rf /opt/theos
+          sudo git clone --depth 1 --recursive https://github.com/theos/theos.git /opt/theos
+          sudo chown -R $USER /opt/theos
+
+      - name: Get version
+        id: version
+        run: |
+          VER=$(grep Version control | awk '{print $2}')
+          echo "VERSION=$VER" >> $GITHUB_OUTPUT
+          mkdir -p packages_final
+
+      # 1. rootful（deb + tipa）
+      - name: Build rootful
+        env:
+          THEOS: /opt/theos
+        run: |
+          export PATH="/opt/homebrew/opt/make/libexec/gnubin:$PATH"
+          make clean package DEBUG=0
+          mv packages/*.deb packages_final/VansonMod_${{ steps.version.outputs.VERSION }}_rootful.deb
+          mv packages/*.tipa packages_final/VansonMod_${{ steps.version.outputs.VERSION }}_TrollStore.tipa
+
+      # 2. rootless（deb only）
+      - name: Build rootless
+        env:
+          THEOS: /opt/theos
+        run: |
+          export PATH="/opt/homebrew/opt/make/libexec/gnubin:$PATH"
+          make clean package DEBUG=0 THEOS_PACKAGE_SCHEME=rootless SKIP_TIPA=1
+          mv packages/*.deb packages_final/VansonMod_${{ steps.version.outputs.VERSION }}_rootless.deb
+
+      # 上传所有包
+      - name: Upload all
+        uses: actions/upload-artifact@v4
+        with:
+          name: VansonMod_v${{ steps.version.outputs.VERSION }}_All
+          path: packages_final/
+          retention-days: 7
