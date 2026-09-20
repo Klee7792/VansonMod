@@ -24,15 +24,12 @@ jobs:
       - name: Install Theos
         run: |
           brew install ldid
-          git clone --depth=1 https://github.com/theos/theos.git "$HOME/theos"
-          # theos 仓库可能自带 sdks 目录，仅在为空时补齐设备 SDK
+          # 递归克隆：vendor（headers/lib/dm.pl/logos 等）都是 git 子模块
+          git clone --recursive --depth=1 --shallow-submodules https://github.com/theos/theos.git "$HOME/theos"
+          # sdks 不是子模块，仅在缺失时补齐设备 SDK
           if [ -z "$(ls -A "$HOME/theos/sdks" 2>/dev/null)" ]; then
             git clone --depth=1 https://github.com/theos/sdks.git "$HOME/theos/sdks"
           fi
-          # 精简克隆的 theos 不含 dm.pl，make package 必需
-          mkdir -p "$HOME/theos/bin"
-          curl -fsSL https://raw.githubusercontent.com/theos/dm.pl/master/dm.pl -o "$HOME/theos/bin/dm.pl"
-          chmod +x "$HOME/theos/bin/dm.pl"
           echo "THEOS=$HOME/theos" >> "$GITHUB_ENV"
 
       - name: Read version from control
