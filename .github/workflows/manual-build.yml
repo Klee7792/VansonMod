@@ -29,6 +29,10 @@ jobs:
           if [ -z "$(ls -A "$HOME/theos/sdks" 2>/dev/null)" ]; then
             git clone --depth=1 https://github.com/theos/sdks.git "$HOME/theos/sdks"
           fi
+          # 精简克隆的 theos 不含 dm.pl，make package 必需
+          mkdir -p "$HOME/theos/bin"
+          curl -fsSL https://raw.githubusercontent.com/theos/dm.pl/master/dm.pl -o "$HOME/theos/bin/dm.pl"
+          chmod +x "$HOME/theos/bin/dm.pl"
           echo "THEOS=$HOME/theos" >> "$GITHUB_ENV"
 
       - name: Read version from control
