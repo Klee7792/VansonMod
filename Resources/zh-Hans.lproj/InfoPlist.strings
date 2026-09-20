@@ -1,0 +1,4 @@
+/* 本地化占位：仅用于向系统声明本应用支持该语言，
+   使系统编辑菜单（全选/拷贝/粘贴）跟随设备语言。
+   显示名保持 VansonMod 不变。 */
+"CFBundleDisplayName" = "VansonMod";

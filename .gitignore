@@ -10,3 +10,4 @@ Payload/
 *.tmp
 *.log
 Github-main/.git/
+.workbuddy/

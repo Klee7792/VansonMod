@@ -1,0 +1,2 @@
+/* Localization placeholder: declares ru support so the system edit menu follows device language. Display name stays "VansonMod". */
+"CFBundleDisplayName" = "VansonMod";

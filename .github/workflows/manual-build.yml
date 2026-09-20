@@ -1,0 +1,60 @@
+name: Manual Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_release:
+        description: "Run scripts/release.sh (derive rootless / roothide deb variants)"
+        type: boolean
+        default: true
+      debug_build:
+        description: "Debug build (DEBUG=1, otherwise FINALPACKAGE=1 DEBUG=0)"
+        type: boolean
+        default: false
+
+jobs:
+  build:
+    name: Build VansonMod
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Theos
+        run: |
+          brew install ldid
+          git clone --depth=1 https://github.com/theos/theos.git "$HOME/theos"
+          git clone --depth=1 https://github.com/theos/sdks.git "$HOME/theos/sdks"
+          echo "THEOS=$HOME/theos" >> "$GITHUB_ENV"
+
+      - name: Read version from control
+        run: |
+          VERSION="$(awk -F': ' '/^Version:/ {print $2; exit}' control)"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "Building version: $VERSION"
+
+      - name: Build
+        run: |
+          if [ "${{ inputs.run_release }}" = "true" ]; then
+            # release.sh 内部会执行 make clean package 并派生 rootless / roothide 变体
+            bash scripts/release.sh
+          else
+            if [ "${{ inputs.debug_build }}" = "true" ]; then
+              make clean package DEBUG=1
+            else
+              make clean package FINALPACKAGE=1 DEBUG=0
+            fi
+          fi
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: VansonMod-v${{ env.VERSION }}-${{ github.run_number }}
+          path: |
+            packages/*.deb
+            packages/*.tipa
+            release/**/*.deb
+            release/**/*.tipa
+          if-no-files-found: error
+          retention-days: 14
